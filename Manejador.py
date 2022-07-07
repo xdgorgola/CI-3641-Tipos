@@ -1,4 +1,5 @@
 from __future__ import annotations
+import itertools
 from math import lcm
 import math
 
@@ -61,7 +62,40 @@ class Struct(Tipo):
 
         self.empaq = self.info_empaquetada()
         self.naked = self.info_naked()
-        self.optim = self.info_opti()
+        self.optim = self.info_opti() # Importante ir de ultima
+
+
+    def mejor_permutacion(self : Struct) -> tuple[int,int,int]:
+        minDesp : int = math.inf
+        minPerm : tuple[int,int,int]
+
+        for p in itertools.permutations(self.campos):
+            used : int = 0
+            desp : int = 0
+            b : int = 0
+            for i in range(len(p)):
+                (s, _, _) = p[i].optim
+                used += s
+
+                if (i == len(p) - 1):
+                    break
+                
+                ul : int = b + s
+                na : int = p[i+1].optim[1]
+                if (ul % na == 0):
+                    b += s
+                    continue
+
+                nb : int = ul + (na - (ul % na))
+                used += nb - ul
+                desp += nb - ul
+                b = nb
+            
+            if (desp < minDesp):
+                minDesp = desp
+                minPerm = (used, p[0].optim[1], desp)
+        
+        return minPerm
 
 
     def info_empaquetada(self : Struct) -> tuple[int,int,int]:
@@ -69,6 +103,7 @@ class Struct(Tipo):
         for i in self.campos:
             usados += i.empaq[0]
         
+        # es uno o la alineacion del 1ero?
         return (usados, 1, 0)
     
 
@@ -94,20 +129,21 @@ class Struct(Tipo):
             used += nb - ul
             desp += nb - ul
             b = nb
-
+        
         return (used, self.campos[0].naked[1], desp)
 
 
     def info_opti(self : Struct) -> tuple[int,int,int]:
 
+        if (len(self.campos) <= 6):
+            return self.mejor_permutacion()
+
         used : int = 0
         desp : int = 0
         b : int = 0
         sortCampos : list[Tipo] = sorted(self.campos, \
-            key = lambda t:t.optim[0], reverse = True)
+            key = lambda t:t.optim[1], reverse = True)
         
-        print([i.optim[0] for i in sortCampos])
-
         for i in range(len(sortCampos)):
             (s, _, _) = sortCampos[i].optim
             used += s
@@ -125,6 +161,11 @@ class Struct(Tipo):
             used += nb - ul
             desp += nb - ul
             b = nb
+
+         # No usar la nueva configuracion si la configuracion
+         # normal es mejor
+        if (desp > self.naked[2]):
+            return self.naked
 
         return (used, sortCampos[0].optim[1], desp)
     
@@ -147,6 +188,7 @@ class Union(Tipo):
         for i in self.campos:
             maxTam = i.empaq[0] if i.empaq[0] > maxTam else maxTam
         
+        # es uno o la alineacion del lcm?
         return (maxTam, 1, 0)
     
 
@@ -260,14 +302,22 @@ class ManejadorTipos:
         return True
 
 
-man : ManejadorTipos = ManejadorTipos()
-man.definir_atomico("bool", 1, 2)
-man.definir_atomico("char", 1, 2)
-man.definir_atomico("char2", 2, 2) # array de 2 chars jeje
-man.definir_atomico("int", 4, 4)
-man.definir_atomico("double", 8, 8)
-man.definir_struct("meta", ["int", "char2", "int", "double", "bool"])
-man.mostrar_info_tipo("meta")
-
+#man : ManejadorTipos = ManejadorTipos()
+#man.definir_atomico("bool", 1, 2)
+#man.definir_atomico("char", 1, 2)
+#man.definir_atomico("char2", 2, 2) # array de 2 chars jeje
+#man.definir_atomico("int", 4, 4)
+#man.definir_atomico("double", 8, 8)
+#man.definir_struct("meta", ["int", "char2", "int", "double", "bool"])
+##man.mostrar_info_tipo("meta")
+#
 #man.definir_union("todos_unidos", ["char", "char2", "double", "int"])
-#man.mostrar_info_tipo("todos_unidos")
+##man.mostrar_info_tipo("todos_unidos")
+#
+#man.definir_atomico("bobo", 1, 16)
+#man.definir_atomico("tonto", 3, 7)
+#man.definir_struct("xd", ["bobo", "bobo", "bobo", "tonto"])
+##man.mostrar_info_tipo("xd")
+#
+#man.definir_struct("mago", ["bool", "bool", "xd", "tonto", "bool", "bool"])
+#man.mostrar_info_tipo("mago")
