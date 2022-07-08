@@ -43,7 +43,11 @@ def comando_atomico(tokens : list[str]) -> None:
         wrong_params()
         return
     
-    manejador.definir_atomico(tokens[0], tokens[1], tokens[2])
+    if (not all(map(str.isnumeric, tokens[1::]))):
+        wrong_params()
+        return
+    
+    manejador.definir_atomico(tokens[0], int(tokens[1]), int(tokens[2]))
 
 
 def comando_struct(tokens : list[str]) -> None:
@@ -67,7 +71,7 @@ def comando_describir(tokens : list[str]) -> None:
         wrong_params()
         return
     
-    manejador.mostrar_info_tipo(tokens.pop)
+    manejador.mostrar_info_tipo(tokens.pop())
 
 while (run):
     tokens : list[str] = input("Introduce un comando>").split()

@@ -1,6 +1,6 @@
 from __future__ import annotations
-import itertools
 from math import lcm, inf
+import itertools
 
 
 class Tipo:
@@ -285,12 +285,13 @@ class Union(Tipo):
         """
 
         maxTam : int = 0
-
+        alinea : list[int] = [i.naked[1] for i in self.campos] 
+        
         for i in self.campos:
             maxTam = i.empaq[0] if i.empaq[0] > maxTam else maxTam
         
         # es uno o la alineacion del lcm?
-        return (maxTam, self.campos[0].empaq[1], 0)
+        return (maxTam, lcm(*alinea), 0)
     
 
     def info_naked(self : Union) -> tuple[int,int,int]:
