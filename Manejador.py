@@ -1,27 +1,42 @@
 from __future__ import annotations
 import itertools
-from math import lcm
-import math
+from math import lcm, inf
 
-"""
-• El lenguaje guarda registros y registros viariantes sin empaquetar.
-• El lenguaje guarda registros y registros viariantes empaquetados.
-• El lenguaje guarda registros y registros viariantes reordenando los campos de
-    manera óptima (minimizando la memoria, sin violar reglas de alineación).
-"""
+
 class Tipo:
-    #first es tamano
-    #second es alineacion
-    #third es desperdiciados
+    """
+    Esqueleto de una clase representativa de un tipo. Guarda informacion
+    sobre los bytes usados, su alineacion y los bytes desperdiciados
+    en las tuplas naked, empaq, optim que representan esta informacion 
+    respectivamente en los siguientes casos:
+
+    - El lenguaje guarda registros y registros variantes sin empaquetar.
+    - El lenguaje guarda registros y registros variantes empaquetados.
+    - El lenguaje guarda registros y registros variantes reordenando los campos de
+        manera óptima (minimizando la memoria, sin violar reglas de alineación).
+    
+    La informacion la almacenan en el siguiente orden:
+        - Bytes usados
+        - Alineacion
+        - Bytes desperdiciados
+    """
+
+
     naked : tuple[int, int, int] = (0,0,0)
     empaq : tuple[int, int, int] = (0,0,0)
     optim : tuple[int, int, int] = (0,0,0)
+
 
     def __init__(self : Tipo, name : str) -> None:
         self.name : str = name
     
 
     def imprimir_info(self : Tipo) -> None:
+        """
+        Imprime en pantalla la informacion relacionada al tipo
+        """
+
+        print(f"DESCRIPCION DEL TIPO {self.name}\n")
         print("INFO TAMANO EMPAQUETADO")
         print("-" * 30)
         print(f"Bytes que ocupa {self.empaq[0]}")
@@ -45,8 +60,22 @@ class Tipo:
 
     
 class Atomico(Tipo):
+    """
+    Representa un tipo atomico. Solo guarda nombre, espacio en
+    bytes que ocupa y su alineacion.
+    """
+
 
     def __init__(self : Atomico, name : str, bytes : int, alin : int) -> None:
+        """
+        Constructor
+
+        Arguments:
+            name -- Nombre del tipo 
+            bytes -- Tamano en bytes que ocupa el tipo
+            alin -- Alineaicon del tipo
+        """
+
         super().__init__(name)
         self.bytes : int = bytes
         self.alin : int = alin
@@ -55,18 +84,39 @@ class Atomico(Tipo):
 
 
 class Struct(Tipo):
+    """
+    Representa un tipo registro. Guarda una lista de 
+    campos con los tipos que contiene en ese orden.
+    """
 
+    
     def __init__(self : Struct, name : str, campos : list[Tipo]) -> None:
+        """
+        Constructor
+
+        Arguments:
+            name -- Nombre del tipo
+            campos -- Campos del tipo declarados en orden
+        """
+
         super().__init__(name)
         self.campos = campos[::]
 
         self.empaq = self.info_empaquetada()
         self.naked = self.info_naked()
-        self.optim = self.info_opti() # Importante ir de ultima
+        self.optim = self.info_opti() # Importante ir despues de la naked
 
 
     def mejor_permutacion(self : Struct) -> tuple[int,int,int]:
-        minDesp : int = math.inf
+        """
+        Calcula la mejor permutacion de los campos de la estructura
+        para desperdiciar la menor cantidad de bytes posibles.
+
+        Returns:
+            La permutacion  que menos bytes desperdicia de los campos de la struct definida
+        """
+
+        minDesp : int = inf
         minPerm : tuple[int,int,int]
 
         for p in itertools.permutations(self.campos):
@@ -99,15 +149,31 @@ class Struct(Tipo):
 
 
     def info_empaquetada(self : Struct) -> tuple[int,int,int]:
+        """
+        Calcula los bytes usados, la alineacion y la cantidad
+        de bytes despediciados si se empaqueta la estructura
+
+        Returns:
+            Tupla con los bytes usados, la alineacion y la cantidad de 
+            bytes desperdiciados en ese orden
+        """
+
         usados : int = 0
         for i in self.campos:
             usados += i.empaq[0]
         
-        # es uno o la alineacion del 1ero?
-        return (usados, 1, 0)
+        return (usados, self.campos[0].empaq[1], 0)
     
 
     def info_naked(self : Struct) -> tuple[int,int,int]:
+        """
+        Calcula los bytes usados, la alineacion y la cantidad
+        de bytes despediciados si se dejan los campos como estan
+
+        Returns:
+            Tupla con los bytes usados, la alineacion y la cantidad de 
+            bytes desperdiciados en ese orden
+        """
 
         used : int = 0
         desp : int = 0
@@ -134,6 +200,20 @@ class Struct(Tipo):
 
 
     def info_opti(self : Struct) -> tuple[int,int,int]:
+        """
+        Calcula los bytes usados, la alineacion y la cantidad
+        de bytes despediciados si se optimiza la estructura.
+
+        Para menos de 6 campos, se prueban todas las permutaciones
+        (con mas campos puede llegar a ser muy lento).
+
+        Par mas de 6 campos intenta minimizar la memoria gastada 
+        colocando los campos con la alineacion mas grande primero.
+
+        Returns:
+            Tupla con los bytes usados, la alineacion y la cantidad de 
+            bytes desperdiciados en ese orden
+        """
 
         if (len(self.campos) <= 6):
             return self.mejor_permutacion()
@@ -163,7 +243,7 @@ class Struct(Tipo):
             b = nb
 
          # No usar la nueva configuracion si la configuracion
-         # normal es mejor
+         # normal es mejor que la "optimizada"
         if (desp > self.naked[2]):
             return self.naked
 
@@ -172,8 +252,20 @@ class Struct(Tipo):
 
 
 class Union(Tipo):
+    """
+    Representa un tipo registro variante. Guarda una lista de 
+    campos con los tipos que puede contener en ese orden.
+    """
 
     def __init__(self: Union, name: str, campos : list[Tipo]) -> None:
+        """
+        Constructor
+
+        Arguments:
+            name -- Nombre del tipo
+            campos -- Campos del tipo declarados en orden
+        """
+
         super().__init__(name)
         self.campos = campos[::]
 
@@ -183,16 +275,35 @@ class Union(Tipo):
 
 
     def info_empaquetada(self : Union) -> tuple[int,int,int]:
+        """
+        Calcula los bytes usados, la alineacion y la cantidad
+        de bytes despediciados si se empaquetan los registros
+
+        Returns:
+            Tupla con los bytes usados, la alineacion y la cantidad de 
+            bytes desperdiciados en ese orden
+        """
+
         maxTam : int = 0
 
         for i in self.campos:
             maxTam = i.empaq[0] if i.empaq[0] > maxTam else maxTam
         
         # es uno o la alineacion del lcm?
-        return (maxTam, 1, 0)
+        return (maxTam, self.campos[0].empaq[1], 0)
     
 
     def info_naked(self : Union) -> tuple[int,int,int]:
+        """
+        Calcula los bytes usados, la alineacion y la cantidad
+        de bytes despediciados si se dejan los campos como estan
+        a los registros
+
+        Returns:
+            Tupla con los bytes usados, la alineacion y la cantidad de 
+            bytes desperdiciados en ese orden
+        """
+
         maxTam : int = 0
         alinea : list[int] = [i.naked[1] for i in self.campos] 
 
@@ -203,6 +314,15 @@ class Union(Tipo):
 
 
     def info_optim(self : Union) -> tuple[int,int,int]:
+        """
+        Calcula los bytes usados, la alineacion y la cantidad
+        de bytes despediciados si se optimizan los registros
+
+        Returns:
+            Tupla con los bytes usados, la alineacion y la cantidad de 
+            bytes desperdiciados en ese orden
+        """
+
         maxTam : int = 0
         alinea : list[int] = [i.optim[1] for i in self.campos] 
 
@@ -213,6 +333,12 @@ class Union(Tipo):
 
 
 class ManejadorTipos:
+    """
+    Manejador de tipos. Simplemente se encarga de funcionar como interfaz
+    para definir los tipos, asegurarse de que no se definan mas de una vez, 
+    e imprimir la informacion de un tipo definido.
+    """
+
 
     def __init__(self : ManejadorTipos) -> None:
         self.atomicos : dict[str, Atomico] = {}
@@ -221,10 +347,30 @@ class ManejadorTipos:
     
 
     def existe_tipo(self : ManejadorTipos, nombre : str) -> bool:
+        """
+        Chequea si ya existe un tipo que ya use un nombre.
+
+        Arguments:
+            nombre -- Nombre del tipo a buscar
+
+        Returns:
+            True si el tipo ya fue definido como atomico, struct o union
+        """
+
         return nombre in self.atomicos or nombre in self.structs or nombre in self.unions
 
     
     def mostrar_info_tipo(self : ManejadorTipos, nombre : str) -> bool:
+        """
+        Muestra la informacion de un tipo en caso de existir
+
+        Arguments:
+            nombre -- Tipo a mostrar informacion
+
+        Returns:
+            True si el tipo existe. False en caso contrario.
+        """
+
         if (not self.existe_tipo(nombre)):
             print(f"El tipo {nombre} no existe")
             return False
@@ -242,6 +388,18 @@ class ManejadorTipos:
 
 
     def definir_atomico(self : ManejadorTipos, nombre : str, bytes : int, alin : int) -> bool:
+        """
+        Define un tipo atomico.
+
+        Arguments:
+            nombre -- Nombre del tipo
+            bytes -- Bytes que ocupa
+            alin -- Alineacion del tipo
+
+        Returns:
+            True si el tipo no existia ya y se pudo crear. False en caso contrario.
+        """
+
         if (self.existe_tipo(nombre)):
             print(f"Un tipo de nombre {nombre} ya existe.")
             return False
@@ -251,6 +409,18 @@ class ManejadorTipos:
     
 
     def definir_struct(self : ManejadorTipos, nombre : str, campos : list[str]) -> bool:
+        """
+        Define una struct si no existe ya y si los tipos de 
+        sus campos estan definidos.
+
+        Arguments:
+            nombre -- Nombre del tipo
+            campos -- Campos del struct en orden de aparicion
+
+        Returns:
+            True si pudo crearse el struct. False en caso contrario
+        """
+
         if (self.existe_tipo(nombre)):
             print(f"Un tipo de nombre {nombre} ya existe.")
             return False
@@ -277,6 +447,18 @@ class ManejadorTipos:
 
 
     def definir_union(self : ManejadorTipos, nombre : str, campos : list[str]) -> bool:
+        """
+        Define una union si no existe ya y si los tipos de 
+        sus campos estan definidos.
+
+        Arguments:
+            nombre -- Nombre del tipo
+            campos -- Campos del union en orden de aparicion
+
+        Returns:
+            True si pudo crearse el union. False en caso contrario
+        """
+
         if (self.existe_tipo(nombre)):
             print(f"Un tipo de nombre {nombre} ya existe.")
             return False
