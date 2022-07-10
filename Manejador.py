@@ -19,12 +19,13 @@ class Tipo:
         - Bytes usados
         - Alineacion
         - Bytes desperdiciados
+        - Orden de los campos
     """
 
 
-    naked : tuple[int, int, int] = (0,0,0)
-    empaq : tuple[int, int, int] = (0,0,0)
-    optim : tuple[int, int, int] = (0,0,0)
+    naked : tuple[int, int, int, list[str]] = (0,0,0, None)
+    empaq : tuple[int, int, int, list[str]] = (0,0,0, None)
+    optim : tuple[int, int, int, list[str]] = (0,0,0, None)
 
 
     def __init__(self : Tipo, name : str) -> None:
@@ -56,6 +57,7 @@ class Tipo:
         print(f"Bytes que ocupa {self.optim[0]}")
         print(f"Alineacion {self.optim[1]}")
         print(f"Bytes desperdiciados {self.optim[2]}")
+        print(f"Orden optimizado de los campos:\n\t{self.optim[3]}")
         print("-" * 30 + "\n")
 
     
@@ -117,7 +119,7 @@ class Struct(Tipo):
         """
 
         minDesp : int = inf
-        minPerm : tuple[int,int,int]
+        minPerm : tuple[int,int,int,list[str]]
 
         for p in itertools.permutations(self.campos):
             used : int = 0
@@ -143,8 +145,8 @@ class Struct(Tipo):
             
             if (desp < minDesp):
                 minDesp = desp
-                minPerm = (used, p[0].optim[1], desp)
-        
+                minPerm = (used, p[0].optim[1], desp, [i.name for i in p])
+
         return minPerm
 
 
@@ -162,7 +164,7 @@ class Struct(Tipo):
         for i in self.campos:
             usados += i.empaq[0]
         
-        return (usados, self.campos[0].empaq[1], 0)
+        return (usados, self.campos[0].empaq[1], 0, [i.name for i in self.campos])
     
 
     def info_naked(self : Struct) -> tuple[int,int,int]:
@@ -196,7 +198,7 @@ class Struct(Tipo):
             desp += nb - ul
             b = nb
         
-        return (used, self.campos[0].naked[1], desp)
+        return (used, self.campos[0].naked[1], desp, [i.name for i in self.campos])
 
 
     def info_opti(self : Struct) -> tuple[int,int,int]:
@@ -215,6 +217,7 @@ class Struct(Tipo):
             bytes desperdiciados en ese orden
         """
 
+        # Usar solo para 6 campos or else, permutaciones go vrrrrrrrrrrrr
         if (len(self.campos) <= 6):
             return self.mejor_permutacion()
 
@@ -247,7 +250,7 @@ class Struct(Tipo):
         if (desp > self.naked[2]):
             return self.naked
 
-        return (used, sortCampos[0].optim[1], desp)
+        return (used, sortCampos[0].optim[1], desp, [i.name for i in sortCampos])
     
 
 
@@ -290,8 +293,7 @@ class Union(Tipo):
         for i in self.campos:
             maxTam = i.empaq[0] if i.empaq[0] > maxTam else maxTam
         
-        # es uno o la alineacion del lcm?
-        return (maxTam, lcm(*alinea), 0)
+        return (maxTam, lcm(*alinea), 0, [i.name for i in self.campos])
     
 
     def info_naked(self : Union) -> tuple[int,int,int]:
@@ -311,7 +313,7 @@ class Union(Tipo):
         for i in self.campos:
             maxTam = i.naked[0] if i.naked[0] > maxTam else maxTam
 
-        return (maxTam, lcm(*alinea), 0)
+        return (maxTam, lcm(*alinea), 0, [i.name for i in self.campos])
 
 
     def info_optim(self : Union) -> tuple[int,int,int]:
@@ -330,7 +332,7 @@ class Union(Tipo):
         for i in self.campos:
             maxTam = i.optim[0] if i.optim[0] > maxTam else maxTam
 
-        return (maxTam, lcm(*alinea), 0)
+        return (maxTam, lcm(*alinea), 0, [i.name for i in self.campos])
 
 
 class ManejadorTipos:
