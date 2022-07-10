@@ -1,6 +1,7 @@
 from __future__ import annotations
 from math import lcm, inf
 import itertools
+import math
 
 
 class Tipo:
@@ -57,7 +58,11 @@ class Tipo:
         print(f"Bytes que ocupa {self.optim[0]}")
         print(f"Alineacion {self.optim[1]}")
         print(f"Bytes desperdiciados {self.optim[2]}")
-        print(f"Orden optimizado de los campos:\n\t{self.optim[3]}")
+
+        if (isinstance(self, Struct)):
+            print(f"Orden optimizado de los campos:\n\t{self.optim[3]}")
+        
+        print("-" * 30 + "\n")
         print("-" * 30 + "\n")
 
     
@@ -82,7 +87,7 @@ class Atomico(Tipo):
         self.bytes : int = bytes
         self.alin : int = alin
 
-        self.naked = self.empaq = self.optim = (bytes, alin, 0)
+        self.naked = self.empaq = self.optim = (bytes, alin, 0, None)
 
 
 class Struct(Tipo):
@@ -126,7 +131,7 @@ class Struct(Tipo):
             desp : int = 0
             b : int = 0
             for i in range(len(p)):
-                (s, _, _) = p[i].optim
+                (s, _, _, _) = p[i].optim
                 used += s
 
                 if (i == len(p) - 1):
@@ -181,7 +186,7 @@ class Struct(Tipo):
         desp : int = 0
         b : int = 0
         for i in range(len(self.campos)):
-            (s, _, _) = self.campos[i].naked
+            (s, _, _, _) = self.campos[i].naked
             used += s
 
             if (i == len(self.campos) - 1):
@@ -228,7 +233,7 @@ class Struct(Tipo):
             key = lambda t:t.optim[1], reverse = True)
         
         for i in range(len(sortCampos)):
-            (s, _, _) = sortCampos[i].optim
+            (s, _, _, _) = sortCampos[i].optim
             used += s
 
             if (i == len(sortCampos) - 1):
@@ -308,12 +313,15 @@ class Union(Tipo):
         """
 
         maxTam : int = 0
+        minDes : int = math.inf
         alinea : list[int] = [i.naked[1] for i in self.campos] 
 
         for i in self.campos:
             maxTam = i.naked[0] if i.naked[0] > maxTam else maxTam
+            if i.naked[2] < minDes:
+                minDes = i.naked[2]
 
-        return (maxTam, lcm(*alinea), 0, [i.name for i in self.campos])
+        return (maxTam, lcm(*alinea), minDes, [i.name for i in self.campos])
 
 
     def info_optim(self : Union) -> tuple[int,int,int]:
@@ -327,12 +335,15 @@ class Union(Tipo):
         """
 
         maxTam : int = 0
+        minDes : int = math.inf
         alinea : list[int] = [i.optim[1] for i in self.campos] 
 
         for i in self.campos:
             maxTam = i.optim[0] if i.optim[0] > maxTam else maxTam
+            if i.naked[2] < minDes:
+                minDes = i.naked[2]
 
-        return (maxTam, lcm(*alinea), 0, [i.name for i in self.campos])
+        return (maxTam, lcm(*alinea), minDes, [i.name for i in self.campos])
 
 
 class ManejadorTipos:
@@ -430,7 +441,7 @@ class ManejadorTipos:
         
         for n in campos:
             if (not self.existe_tipo(n)):
-                print(f"El tipo de nombre {nombre} no existe.")
+                print(f"El tipo de nombre {n} no existe.")
                 return False
         
         c : list[Tipo] = []
@@ -468,7 +479,7 @@ class ManejadorTipos:
         
         for n in campos:
             if (not self.existe_tipo(n)):
-                print(f"El tipo de nombre {nombre} no existe.")
+                print(f"El tipo de nombre {n} no existe.")
                 return False
         
         c : list[Tipo] = []
