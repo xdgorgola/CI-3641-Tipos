@@ -483,24 +483,3 @@ class ManejadorTipos:
         
         self.unions[nombre] = Union(nombre, c)
         return True
-
-
-#man : ManejadorTipos = ManejadorTipos()
-#man.definir_atomico("bool", 1, 2)
-#man.definir_atomico("char", 1, 2)
-#man.definir_atomico("char2", 2, 2) # array de 2 chars jeje
-#man.definir_atomico("int", 4, 4)
-#man.definir_atomico("double", 8, 8)
-#man.definir_struct("meta", ["int", "char2", "int", "double", "bool"])
-##man.mostrar_info_tipo("meta")
-#
-#man.definir_union("todos_unidos", ["char", "char2", "double", "int"])
-##man.mostrar_info_tipo("todos_unidos")
-#
-#man.definir_atomico("bobo", 1, 16)
-#man.definir_atomico("tonto", 3, 7)
-#man.definir_struct("xd", ["bobo", "bobo", "bobo", "tonto"])
-##man.mostrar_info_tipo("xd")
-#
-#man.definir_struct("mago", ["bool", "bool", "xd", "tonto", "bool", "bool"])
-#man.mostrar_info_tipo("mago")
