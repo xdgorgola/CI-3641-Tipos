@@ -30,6 +30,6 @@ SALIR
   Mata\sale del programa.            
 ```
 
-### Nota sobre el espacio desperdiciado e
+### Nota sobre el espacio desperdiciado
 Cuando se calcula el espacio desperdiciado por una struct, no se toma en cuenta el padding/espacio desperdiciado por campos de tipo registro o 
 registro variantes del struct definido, solo se cuenta el padding entre los campos del struct.
