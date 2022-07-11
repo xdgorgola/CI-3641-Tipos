@@ -23,9 +23,13 @@ DESCRIBIR <NOMBRE>
   
     .Cuando el lenguaje guarda registros y registros variantes sin empaquetar.
     .Cuando el lenguaje guarda registros y registros variantes empaquetados.
-    .Cuando el lenguaje guarda registros y registros vaariantes reordenando los
+    .Cuando el lenguaje guarda registros y registros variantes reordenando los
     campos de manera óptima (minimizando la memoria, sin violar reglas de alineación).
     
 SALIR
   Mata\sale del programa.            
 ```
+
+### Nota sobre el espacio desperdiciado e
+Cuando se calcula el espacio desperdiciado por una struct, no se toma en cuenta el padding/espacio desperdiciado por campos de tipo registro o 
+registro variantes del struct definido, solo se cuenta el padding entre los campos del struct.
